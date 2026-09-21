@@ -3,24 +3,23 @@
 
 # In[1]:
 
-# Create QSO dataset
 
 import os
 import numpy as np
+import os
 from astropy.io import fits
 from astropy.table import Table
 import desisim.templates
 import desispec.io
 
-print("starting pipeline...")
-
 specprod = 'iron'    # Internal name for the EDR
 specprod_dir = '/global/cfs/cdirs/desi/public/dr1/spectro/redux/iron'
 
-zpix_cat = Table.read(f'{specprod_dir}/zcatalog/v1/zall-pix-{specprod}.fits', hdu="ZCATALOG")
+zpix_cat = Table.read(f'{specprod_dir}/zcatalog/zall-pix-{specprod}.fits', hdu="ZCATALOG"
+                     )
 
 Quasar_cat2 = zpix_cat[(zpix_cat['SPECTYPE'] == 'QSO') & 
-     (zpix_cat['Z'] < 6.0) & 
+     (zpix_cat['Z'] < 1.8) & 
      (zpix_cat['Z'] >= 0.03) & 
      (zpix_cat['ZWARN'] == 0 ) & 
      (zpix_cat['OBJTYPE'] == 'TGT') & 
@@ -28,8 +27,6 @@ Quasar_cat2 = zpix_cat[(zpix_cat['SPECTYPE'] == 'QSO') &
      (zpix_cat['SURVEY']=='main') & (zpix_cat['PROGRAM']=='dark')]
 
 num = np.unique(Quasar_cat2['HEALPIX'])
-
-print(f'{len(num)=}')
 
 from desispec.spectra import stack
 
@@ -39,9 +36,7 @@ test_array = []
 targetids_array = []
 z_array = []
 stack_count = 0
-batch_size = 100  # Number of HEALPIX values to stack and save at once
-
-print("starting loop")
+batch_size = 50  # Number of HEALPIX values to stack and save at once
 
 # Loop through each unique HEALPIX value
 for i in range(len(num)):

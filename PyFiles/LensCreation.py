@@ -7,8 +7,6 @@ from astropy.io import fits
 import h5py
 import random
 
-# Combine QSO + LAE (ELG) to lenses
-
 np.random.seed(123)  # Set seed for NumPy's random generator
 random.seed(123)     # Set seed for Python's random module
 
@@ -23,15 +21,27 @@ def extract_data_from_hdf5(file_path):
     return classifier, [n.decode() for n in name], spectra, redshift
 
 # Function to process and modify QSO fluxes
-def process_qso_fluxes(fits_directory, pkl_directory, output_directory, lens_percentage=1.0, num_files=None):
-    # List all pickle files in the directory
-    pkl_files = [os.path.join(pkl_directory, f) for f in os.listdir(pkl_directory)[0:2]]
+def process_qso_fluxes(fits_directory, hdf5_directory, output_directory, lens_percentage=1.0, num_files=None):
+    # List all HDF5 files in the directory and sort them by name
+    hdf5_files = sorted([f for f in os.listdir(hdf5_directory) if f.endswith(".h5")])
 
-    # Store LAE data
-    all_LAE = pd.concat([pd.read_pickle(f, compression="gzip") for f in pkl_files], ignore_index=True)
-    print(len(all_LAE))
+    # Initialize arrays to store data
+    all_classifierselg, all_nameselg, all_spectraelg, all_redshiftselg = [], [], [], []
 
+    # Iterate over HDF5 files in the directory
+    for filename in hdf5_files:
+        file_path = os.path.join(hdf5_directory, filename)
 
+        # Extract data from the HDF5 file without filtering
+        classifier, name, spectra, redshift = extract_data_from_hdf5(file_path)
+
+        # Append the data to the respective arrays
+        all_classifierselg.extend(classifier)
+        all_nameselg.extend(name)
+        all_spectraelg.extend(spectra)
+        all_redshiftselg.extend(redshift)
+        
+    print(len(all_classifierselg))
     # List all QSO FITS files in the directory
     fits_files = sorted([f for f in os.listdir(fits_directory) if f.endswith(".fits")])
 
@@ -42,6 +52,7 @@ def process_qso_fluxes(fits_directory, pkl_directory, output_directory, lens_per
     all_qso_fluxes = []
     all_targetids_qso = []
     all_redshifts_qso = []
+    all_elg_redshifts = []  # New array to store ELG redshifts
 
     file_qso_indices = []
 
@@ -74,16 +85,17 @@ def process_qso_fluxes(fits_directory, pkl_directory, output_directory, lens_per
     all_qso_fluxes = np.array(all_qso_fluxes)
     all_targetids_qso = np.array(all_targetids_qso)
     all_redshifts_qso = np.array(all_redshifts_qso)
+    all_elg_redshifts = np.array(all_elg_redshifts)
     
     # Initialize a labels array with zeros
     num_qsos = len(all_qso_fluxes)
     labels = np.zeros(num_qsos, dtype=int)
-    LAE_redshifts_for_qsos = np.zeros(num_qsos)
-    LAE_names_for_qsos = np.array([""] * num_qsos, dtype=object)
+    elg_redshifts_for_qsos = np.zeros(num_qsos)
+    elg_names_for_qsos = np.array([""] * num_qsos, dtype=object)
 
     # Handling 100% lensing when lens_percentage is 1.0
     if lens_percentage == 1.0:
-        valid_qso_indices = np.where(all_redshifts_qso <= 3.0)[0]
+        valid_qso_indices = np.where(all_redshifts_qso <= 1.68)[0]
     else:
         # Randomly sample a percentage of the QSOs, regardless of redshift
         num_modify = int(lens_percentage * num_qsos)
@@ -92,12 +104,12 @@ def process_qso_fluxes(fits_directory, pkl_directory, output_directory, lens_per
     # List to keep track of successfully modified indices
     modified_indices = []
 
-    # Superimpose LAE fluxes onto QSO fluxes based on the redshift condition
+    # Superimpose ELG fluxes onto QSO fluxes based on the redshift condition
     for i in valid_qso_indices:
-        LAE_candidates = np.where(all_LAE["redshift"] > all_redshifts_qso[i])[0]
-        if LAE_candidates.size > 0:
-            LAE_idx = random.choice(LAE_candidates)
-            LAE_flux = all_LAE["spectrum"][LAE_idx]
+        elg_candidates = np.where(all_redshiftselg > all_redshifts_qso[i])[0]
+        if elg_candidates.size > 0:
+            elg_idx = random.choice(elg_candidates)
+            elg_flux = pd.DataFrame(all_spectraelg[elg_idx])[1].values
 
             # Generate adjusted_factor from a normal distribution
             while True:
@@ -105,10 +117,10 @@ def process_qso_fluxes(fits_directory, pkl_directory, output_directory, lens_per
                 if adjusted_factor >= 2 and adjusted_factor <= 4:
                     break
 
-            all_qso_fluxes[i] += LAE_flux * adjusted_factor
+            all_qso_fluxes[i] += elg_flux * adjusted_factor
             labels[i] = 1  # Set the label to 1 to indicate modification
-            LAE_redshifts_for_qsos[i] = all_LAE["redshift"][LAE_idx]
-            LAE_names_for_qsos[i] = all_LAE["name"][LAE_idx]
+            elg_redshifts_for_qsos[i] = all_redshiftselg[elg_idx]
+            elg_names_for_qsos[i] = all_nameselg[elg_idx]
             modified_indices.append(i)
 
     print(f"Number of modified QSOs: {len(modified_indices)}")  # Output the modified data into separate files based on original distribution
@@ -128,8 +140,8 @@ def process_qso_fluxes(fits_directory, pkl_directory, output_directory, lens_per
         col2 = fits.Column(name='Z', format='D', array=all_redshifts_qso[start_idx:end_idx])
         col3 = fits.Column(name='FLUX', format='PD()', array=all_qso_fluxes[start_idx:end_idx])
         col4 = fits.Column(name='LABEL', format='I', array=labels[start_idx:end_idx])  # Add labels column
-        col5 = fits.Column(name='ELG_Z', format='D', array=LAE_redshifts_for_qsos[start_idx:end_idx])  # Add LAE redshift column
-        col6 = fits.Column(name='ELG_NAME', format='A20', array=LAE_names_for_qsos[start_idx:end_idx])  # Add LAE name column
+        col5 = fits.Column(name='ELG_Z', format='D', array=elg_redshifts_for_qsos[start_idx:end_idx])  # Add ELG redshift column
+        col6 = fits.Column(name='ELG_NAME', format='A20', array=elg_names_for_qsos[start_idx:end_idx])  # Add ELG name column
         cols = fits.ColDefs([col1, col2, col3, col4, col5, col6])
         hdu = fits.BinTableHDU.from_columns(cols)
 
@@ -149,12 +161,9 @@ def process_qso_fluxes(fits_directory, pkl_directory, output_directory, lens_per
     # Ensure the changes are reflected in a new array for further analysis
     resulting_fluxes = all_qso_fluxes
 
-
-
 # Example usage
 fits_directory = os.path.expandvars('$SCRATCH/MainQSO/')
-pkl_directory = os.path.expandvars('$SCRATCH/augLAE')
-output_directory = os.path.expandvars('$SCRATCH/modifiedMainQSO/')
+hdf5_directory = 'fastspec_ELG1'
+output_directory = 'MainQSO/Redshift/'
 
-
-process_qso_fluxes(fits_directory, pkl_directory, output_directory, lens_percentage=0.1, num_files=10)
+process_qso_fluxes(fits_directory, hdf5_directory, output_directory, lens_percentage=1.0, num_files=None)
