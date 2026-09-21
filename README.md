@@ -1,6 +1,6 @@
 # QSO-Project-Kit
 
-> **Fork notice.** This repository is a fork of Everett McArthur's work on simulating and classifying QSO–ELG strong gravitational lenses in DESI, published as McArthur et al. (2026), *The Astrophysical Journal*. My contribution, in [`advancedML_Pipeline_byJonasSpiller/`](advancedML_Pipeline_byJonasSpiller/), extends the search to QSO–LAE lenses by simulating QSO–LAE mock lenses and designing an improved CNN classifier with a genetic algorithm for hyperparameter tuning. Everything outside that directory is McArthur's original work and is documented [below](#original-project-qsolensefinder-everett-mcarthur).
+> **Fork notice.** This repository is a fork of Everett McArthur's work on simulating and classifying QSO–ELG strong gravitational lenses in DESI, published as McArthur et al. (2026), *The Astrophysical Journal*. My contribution, in [`advancedML_Pipeline_byJonasSpiller/`](advancedML_Pipeline_byJonasSpiller/), extends the search to QSO–LAE lenses by simulating QSO–LAE mock lenses and designing an improved CNN classifier with a genetic algorithm for hyperparameter tuning. This extension has since been merged into McArthur's upstream repository, which underlies McArthur et al. (2026); the QSO–LAE search itself is a follow-on extension and is not part of that paper. Everything outside that directory is McArthur's original work and is documented [below](#original-project-qsolensefinder-everett-mcarthur).
 
 ---
 
