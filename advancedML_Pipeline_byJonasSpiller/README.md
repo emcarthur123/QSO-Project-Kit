@@ -2,9 +2,9 @@
 
 This directory contains a machine learning pipeline developed by Jonas Spiller (ETH Zurich).
 
-The pipeline is designed to identify quasars (QSOs) acting as strong gravitational lenses for background Lyman-Alpha Emitters (LAEs) in the DESI DR1 dataset. It builds upon and extends the pipeline developed by McArthur et al. (2025) by adapting it to higher redshifts and using simulated LAE emission profiles (instead of ELG spectra).
+The pipeline is designed to identify quasars (QSOs) acting as strong gravitational lenses for background Lyman-Alpha Emitters (LAEs) in the DESI DR1 dataset. It builds upon and extends the pipeline developed by McArthur et al. (2026) by adapting it to higher redshifts and using simulated LAE emission profiles (instead of ELG spectra).
 
-**Note**: This repo **does not include** the LAE augmentation pipeline, generating the LAE spectra used to create mock lenses. For that, see [augmented_LAE_4QSOlensing](https://github.com/JonasSpiller/augmented_LAE_4QSOlensing) (private)
+**Note**: This repo **does not include** the LAE augmentation pipeline, generating the LAE spectra used to create mock lenses. For that, see [augmented_LAE_4QSOlensing](https://github.com/JonasSpiller/augmented_LAE_4QSOlensing) (private, available on request)
 
 ---
 
@@ -24,4 +24,4 @@ The pipeline is designed to identify quasars (QSOs) acting as strong gravitation
 
 ---
 
-Part of the pipeline was inspired by [Emily Garvin](https://github.com/eogarvin/MLCCS).
+_Part of the pipeline was inspired by [Emily Garvin](https://github.com/eogarvin/MLCCS)._

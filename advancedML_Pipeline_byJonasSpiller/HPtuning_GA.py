@@ -1,3 +1,5 @@
+# Genetic Algorithm for hyper-parameter tuning. Inspired by E.O. Garvin (https://github.com/eogarvin/MLCCS)
+
 # LIBRARIES
 import numpy as np
 import time
